@@ -5,12 +5,10 @@ import DogSummary from "./DogSummary";
 
 function App() {
   const [dogList, setDogList] = useState([]);
-  const [originalDogList, setOriginalDogList] = useState([]);
-
   const [visibleDogId, setVisibleDogId] = useState(null);
-  const [buttonText, setButtonText] = useState('Filter good dogs: OFF')
-
-
+  const [buttonText, setButtonText] = useState('Filter good dogs: OFF');
+  const [originalDogList, setOriginalDogList] = useState([]);
+  const [filteredDogList, setFilteredDogList] = useState([]);
   useEffect(() => {
     async function fetchData() {
       try {
@@ -41,63 +39,51 @@ function App() {
       if (!response.ok) {
         throw new Error('Update failed');
       }
-      const updatedDogList = await fetchUpdatedDogList();
+
+      const updatedDogList = dogList.map((dog) =>
+        dog.id === dogId ? { ...dog, isGoodDog } : dog
+      );
+
       setDogList(updatedDogList);
-      } catch (error) {
-        console.error('Error updating dog status:', error);
-        throw error;
+
+      if (buttonText === 'Turn filter off') {
+        const updatedFilteredDogList = filteredDogList.map((dog) =>
+          dog.id === dogId ? { ...dog, isGoodDog } : dog
+        );
+        setFilteredDogList(updatedFilteredDogList);
+      }
+    } catch (error) {
+      console.error('Error updating dog status:', error);
+      throw error;
     }
   }
 
-    async function fetchUpdatedDogList() {
-      try {
-        const response = await fetch('http://localhost:3001/pups');
-        if (!response.ok) {
-          throw new Error('Fetch failed');
-        }
-        const updatedDogList = await response.json();
-        return updatedDogList;
-      } catch (error) {
-        console.error('Error fetching updated dog list:', error);
-        throw error;
-      }
-  }
-
   const handleNameClick = (dogId) => {
-    setVisibleDogId((prevVisibleDogId) =>
-      prevVisibleDogId === dogId ? null : dogId
-    );
+    setVisibleDogId(dogId);
   };
 
   function filterDogs() {
     setButtonText((prevButtonText) =>
-      prevButtonText === 'Filter good dogs: OFF' ? 'Filter good dogs: ON' : 'Filter good dogs: OFF'
+      prevButtonText === 'Filter good dogs: OFF' ? 'Turn filter off' : 'Filter good dogs: OFF'
     );
-    
+
     setVisibleDogId(null);
 
     if (buttonText === 'Filter good dogs: OFF') {
       const goodDogs = dogList.filter((dog) => dog.isGoodDog === true);
-      console.log(goodDogs);
-      setDogList(goodDogs);
+      setFilteredDogList(goodDogs);
     } else {
-      setDogList(originalDogList);
+      setFilteredDogList(originalDogList);
     }
   }
 
+  const displayDogList = buttonText === 'Turn filter off' ? filteredDogList : dogList;
 
   return (
     <div className="App">
-      <FilterBar filterDogs={filterDogs} buttonText={buttonText}/>
-      <DogBar 
-      dogList={dogList} 
-      onNameClick={handleNameClick}
-      />
-      <DogSummary 
-      dogList={dogList} 
-      visibleDogId={visibleDogId} 
-      updateDogStatus={updateDogStatus}
-      />
+      <FilterBar filterDogs={filterDogs} buttonText={buttonText} />
+      <DogBar dogList={displayDogList} onNameClick={handleNameClick} />
+      <DogSummary dogList={displayDogList} updateDogStatus={updateDogStatus} visibleDogId={visibleDogId} />
     </div>
   );
 }
