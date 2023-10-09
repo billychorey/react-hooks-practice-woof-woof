@@ -5,7 +5,11 @@ import DogSummary from "./DogSummary";
 
 function App() {
   const [dogList, setDogList] = useState([]);
+  const [originalDogList, setOriginalDogList] = useState([]);
+
   const [visibleDogId, setVisibleDogId] = useState(null);
+  const [buttonText, setButtonText] = useState('Filter good dogs: OFF')
+
 
   useEffect(() => {
     async function fetchData() {
@@ -17,6 +21,7 @@ function App() {
         const dogs = await response.json();
         console.log(dogs);
         setDogList(dogs);
+        setOriginalDogList(dogs);
       } catch (error) {
         console.log(error);
       }
@@ -58,14 +63,32 @@ function App() {
       }
   }
 
-   const handleNameClick = (dogId) => {
-    setVisibleDogId(dogId); // Set the ID of the visible dog to the clicked dog's ID
+  const handleNameClick = (dogId) => {
+    setVisibleDogId((prevVisibleDogId) =>
+      prevVisibleDogId === dogId ? null : dogId
+    );
   };
+
+  function filterDogs() {
+    setButtonText((prevButtonText) =>
+      prevButtonText === 'Filter good dogs: OFF' ? 'Filter good dogs: ON' : 'Filter good dogs: OFF'
+    );
+    
+    setVisibleDogId(null);
+
+    if (buttonText === 'Filter good dogs: OFF') {
+      const goodDogs = dogList.filter((dog) => dog.isGoodDog === true);
+      console.log(goodDogs);
+      setDogList(goodDogs);
+    } else {
+      setDogList(originalDogList);
+    }
+  }
 
 
   return (
     <div className="App">
-      <FilterBar />
+      <FilterBar filterDogs={filterDogs} buttonText={buttonText}/>
       <DogBar 
       dogList={dogList} 
       onNameClick={handleNameClick}
